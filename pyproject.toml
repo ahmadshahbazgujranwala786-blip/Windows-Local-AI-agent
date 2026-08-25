@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "windows_agent"
+version = "0.1.0"
+description = "A Windows agent tool for filesystem, terminal, and automation."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # Yahan apni project ki main dependencies likh dein jaise fastapi, uvicorn, etc.
+]
+
+[tool.setuptools.packages.find]
+include = ["windows_agent*"]

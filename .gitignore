@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Models
+models/
+*.gguf
+*.safetensors
+*.bin
+
+# Local databases / runtime data
+chroma_db/
+**/chroma_db/
+*.sqlite
+*.sqlite3
+
+# Audio / generated files
+*.wav
+*.mp3
+*.ogg
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Test files
+test_*.py
+tst.py
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Environment / secrets
+.env
+.env.*

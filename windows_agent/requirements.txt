@@ -1,0 +1,38 @@
+# Windows Local AI Agent - Python dependencies
+# Python 3.12
+
+# LLM / local inference
+llama-cpp-python
+
+# Windows UI automation
+pywinauto
+pywin32
+
+# Screen capture / image processing
+dxcam
+opencv-python
+numpy
+Pillow
+
+# Mouse and keyboard automation
+PyAutoGUI
+
+# OCR
+pytesseract
+
+# System information
+psutil
+
+# Memory / vector database
+chromadb
+
+# TensorFlow embedding backend
+tensorflow
+tensorflow-hub
+
+# Graph / agent orchestration
+langgraph
+langchain
+
+# HTTP / API utilities commonly used by the backend
+requests
