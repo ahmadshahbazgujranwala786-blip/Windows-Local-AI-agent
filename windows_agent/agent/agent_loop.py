@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from time import perf_counter
 from typing import Any
 
 from windows_agent.agent.llm import LocalLLM
@@ -33,6 +34,10 @@ class AgentState:
     )
 
     results: list[Any] = field(
+        default_factory=list
+    )
+
+    timings: list[dict[str, float | str]] = field(
         default_factory=list
     )
 
@@ -108,6 +113,26 @@ class AgentLoop:
 
         execution_result: Any | None = None
 
+        task_started = perf_counter()
+
+        def record_timing(
+            stage: str,
+            started: float,
+        ) -> None:
+            state.timings.append(
+                {
+                    "stage": stage,
+                    "elapsed_ms": round(
+                        (perf_counter() - started) * 1000,
+                        2,
+                    ),
+                    "since_start_ms": round(
+                        (perf_counter() - task_started) * 1000,
+                        2,
+                    ),
+                }
+            )
+
         while state.step < self._max_steps:
 
             state.step += 1
@@ -123,10 +148,19 @@ class AgentLoop:
             # Ask Qwen for the next decision.
             # ------------------------------------------------
 
+            reasoning_started = perf_counter()
+
             decision = self._llm.process_step(
                 user_query=state.user_query,
                 previous_action=previous_action,
                 execution_result=execution_result,
+            )
+
+            record_timing(
+                "llm_first_reasoning"
+                if state.step == 1
+                else "llm_verification_reasoning",
+                reasoning_started,
             )
 
             print()
@@ -223,10 +257,17 @@ class AgentLoop:
                 "EXECUTING ACTION..."
             )
 
+            execution_started = perf_counter()
+
             execution_result = (
                 self._llm.execute_action(
                     decision
                 )
+            )
+
+            record_timing(
+                "tool_execution",
+                execution_started,
             )
 
             state.results.append(
@@ -298,4 +339,5 @@ class AgentLoop:
             "results": state.results,
             "last_action": state.last_action,
             "last_result": state.last_result,
+            "timings": state.timings,
         }

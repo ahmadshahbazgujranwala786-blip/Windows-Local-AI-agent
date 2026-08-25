@@ -1,0 +1,4 @@
+html.bubble-mode,html.bubble-mode body,html.bubble-mode #root{width:128px;height:128px;min-width:0;margin:0;padding:0;overflow:hidden;background:transparent!important}
+.bubble-mode .bubble-button{width:128px;height:128px;margin:0;padding:10px;border:0;background:transparent;display:grid;place-items:center;cursor:grab;outline:none}
+.bubble-mode .bubble-button:active{cursor:grabbing}
+.bubble-mode .bubble-button .core-wrap{width:108px;height:108px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}

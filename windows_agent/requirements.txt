@@ -36,3 +36,8 @@ langchain
 
 # HTTP / API utilities commonly used by the backend
 requests
+
+# Local HTTP API
+fastapi
+uvicorn
+python-multipart

@@ -6,6 +6,9 @@ from __future__ import annotations
 
 import logging
 import os
+import re
+import threading
+import time
 import warnings
 from pathlib import Path
 
@@ -80,6 +83,7 @@ from fastapi import (
     HTTPException,
     UploadFile,
 )
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 
@@ -189,6 +193,17 @@ from windows_agent.tools.windows_launch import (
 app = FastAPI(
     title="Windows Local AI Agent",
     version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+        "null",
+    ],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
 )
 
 
@@ -364,6 +379,8 @@ tts_service = TTSService(
     output_path=TTS_OUTPUT_PATH,
 )
 
+tts_lock = threading.Lock()
+
 
 # ============================================================
 # 14. RUNTIME HELPERS
@@ -398,6 +415,25 @@ def run_agent(
     natural-language final response.
     """
 
+    greeting_match = re.fullmatch(
+        r"(?:say|tell)\s+(?:hello|hi|hey)\s+to\s+([A-Za-z][A-Za-z -]{0,40})[!.?]?",
+        user_query.strip(),
+        re.IGNORECASE,
+    )
+
+    if greeting_match is not None:
+        return {
+            "state": None,
+            "completed": True,
+            "response": f"Hello, {greeting_match.group(1).strip()}!",
+            "timings": [
+                {
+                    "stage": "fast_conversation",
+                    "elapsed_ms": 0.0,
+                }
+            ],
+        }
+
     state = agent_loop.run(
         user_query.strip()
     )
@@ -410,9 +446,21 @@ def run_agent(
 
     if state.completed:
 
+        final_response_started = time.perf_counter()
+
         final_response = llm.final_response(
             user_query=user_query,
             execution_result=execution_summary,
+        )
+
+        state.timings.append(
+            {
+                "stage": "final_response_generation",
+                "elapsed_ms": round(
+                    (time.perf_counter() - final_response_started) * 1000,
+                    2,
+                ),
+            }
         )
 
     else:
@@ -435,6 +483,7 @@ def run_agent(
             state.completed
         ),
         "response": final_response,
+        "timings": state.timings,
     }
 
 def speak_response(
@@ -463,6 +512,42 @@ def speak_response(
         text,
         language,
     )
+
+
+def speak_response_in_background(
+    text: str,
+    language: str,
+    timings: list[dict[str, float | str]] | None = None,
+) -> None:
+    """Play speech without delaying delivery of the final text response."""
+
+    def speak() -> None:
+        started = time.perf_counter()
+        try:
+            with tts_lock:
+                speak_response(text, language)
+        except Exception as exc:
+            logging.getLogger(__name__).exception(
+                "Background TTS failed: %s",
+                exc,
+            )
+        finally:
+            if timings is not None:
+                timings.append(
+                    {
+                        "stage": "tts",
+                        "elapsed_ms": round(
+                            (time.perf_counter() - started) * 1000,
+                            2,
+                        ),
+                    }
+                )
+
+    threading.Thread(
+        target=speak,
+        name="airi-tts",
+        daemon=True,
+    ).start()
 
 
 # ============================================================
@@ -501,6 +586,8 @@ async def execute_text(
 
     text = request.text.strip()
 
+    request_started = time.perf_counter()
+
     if not text:
 
         raise HTTPException(
@@ -527,30 +614,35 @@ async def execute_text(
     response_text = result[
     "response"
      ]
-    try:
+    speak_response_in_background(
+        response_text,
+        request.language,
+        result["timings"],
+    )
 
-        speak_response(
-            response_text,
-            request.language,
-        )
-
-    except Exception as exc:
-
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                f"TTS execution failed: "
-                f"{exc}"
-            ),
-        ) from exc
-
-    return {
+    response = {
         "status": "completed",
         "completed": result[
             "completed"
         ],
         "response": response_text,
     }
+
+    response["timings"] = result["timings"]
+    response["timings"].append(
+        {
+            "stage": "tts_queued",
+            "elapsed_ms": round(
+                (time.perf_counter() - request_started) * 1000,
+                2,
+            ),
+        }
+    )
+    response["request_elapsed_ms"] = round(
+        (time.perf_counter() - request_started) * 1000,
+        2,
+    )
+    return response
 
 
 # ============================================================
@@ -564,6 +656,8 @@ async def execute_agent(
     audio: UploadFile,
 ) -> dict:
 
+    request_started = time.perf_counter()
+    audio_started = time.perf_counter()
     audio_data = await audio.read()
 
     if not audio_data:
@@ -585,6 +679,14 @@ async def execute_agent(
                 STT_LANGUAGE,
             )
         )
+
+        audio_timing = {
+            "stage": "stt",
+            "elapsed_ms": round(
+                (time.perf_counter() - audio_started) * 1000,
+                2,
+            ),
+        }
 
     except Exception as exc:
 
@@ -624,7 +726,7 @@ async def execute_agent(
         ) from exc
 
     response_text = result[
-        "summary"
+        "response"
     ]
 
     # --------------------------------------------------------
@@ -641,9 +743,10 @@ async def execute_agent(
     "FINAL RESPONSE VALUE:",
     repr(response_text),
 )
-        speak_response(
+        speak_response_in_background(
             response_text,
             TTS_LANGUAGE,
+            result["timings"],
         )
 
     except Exception as exc:
@@ -663,6 +766,21 @@ async def execute_agent(
             "completed"
         ],
         "response": response_text,
+        "timings": [
+            audio_timing,
+            *result["timings"],
+            {
+                "stage": "request_end",
+                "elapsed_ms": round(
+                    (time.perf_counter() - request_started) * 1000,
+                    2,
+                ),
+            },
+        ],
+        "request_elapsed_ms": round(
+            (time.perf_counter() - request_started) * 1000,
+            2,
+        ),
     }
 
 

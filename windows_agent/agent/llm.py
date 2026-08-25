@@ -59,7 +59,10 @@ class LocalLLM:
         self.model = Llama(
             model_path=MODEL_PATH,
             n_ctx=context_size,
+            n_batch=1024,
+            n_ubatch=512,
             n_threads=threads,
+            n_threads_batch=threads,
             verbose=False,
         )
 
@@ -642,7 +645,7 @@ class LocalLLM:
             user_query=user_message,
             system_prompt=get_system_prompt(),
             image=image,
-            max_tokens=128,
+            max_tokens=64,
             stop=["\n"],
         )
 
@@ -696,7 +699,7 @@ class LocalLLM:
             system_prompt=(
                 DIRECT_RESPONSE_SYSTEM_PROMPT
             ),
-            max_tokens=128,
+            max_tokens=64,
 
         )
 

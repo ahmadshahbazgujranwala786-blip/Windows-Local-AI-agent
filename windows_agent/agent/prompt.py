@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from functools import lru_cache
 
 from windows_agent.agent.tools_definitions import (
     get_tool_definitions,
@@ -77,6 +78,7 @@ TOOLS:
 """
 
 
+@lru_cache(maxsize=1)
 def get_system_prompt() -> str:
     """
     Build the system prompt with the current JSON-serializable
@@ -88,7 +90,7 @@ def get_system_prompt() -> str:
     tools_text = json.dumps(
         tool_schemas,
         ensure_ascii=False,
-        indent=2,
+        separators=(",", ":"),
     )
 
     return AGENT_SYSTEM_PROMPT.replace(
