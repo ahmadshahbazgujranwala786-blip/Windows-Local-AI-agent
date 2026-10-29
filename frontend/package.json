@@ -1,8 +1,8 @@
 {
-  "name": "airi-local-agent",
+  "name": "jerrid-ai-local-agent",
   "version": "0.1.0",
   "private": true,
-  "description": "Airi, a local Windows AI companion",
+  "description": "Jerrid AI, a local Windows AI companion",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "tsc -p tsconfig.electron.json && concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
@@ -32,7 +32,7 @@
   },
   "build": {
     "appId": "com.airi.localagent",
-    "productName": "Airi AI Agent",
+    "productName": "Jerrid AI",
     "files": [
       "dist/**/*",
       "dist-electron/**/*",

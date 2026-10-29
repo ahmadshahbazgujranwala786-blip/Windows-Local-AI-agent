@@ -1,4 +1,4 @@
-# Airi desktop frontend
+# Jerrid AI desktop frontend
 
 Electron + React + TypeScript frontend for the local Windows agent. Electron starts or reuses `uvicorn windows_agent.main:app` on `127.0.0.1:8000`, while the renderer talks to it through typed HTTP adapters.
 
@@ -12,6 +12,8 @@ npm run dev
 ```
 
 Set `AIRI_PYTHON` to select a Python executable, or `AIRI_BACKEND_URL` to connect to an already-running local backend.
+
+On Windows, the Electron app registers itself to start automatically when the user logs in. It starts the desktop interface and its local backend together.
 
 The bubble is a separate 128x128 transparent Electron window. Its position is stored in Electron user data, while the main renderer and bubble synchronize status through a `BroadcastChannel`.
 

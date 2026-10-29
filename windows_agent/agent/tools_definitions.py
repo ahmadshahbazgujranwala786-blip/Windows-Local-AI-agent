@@ -92,6 +92,8 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                     "type": "array",
                     "description": (
                         "Sequential UI actions."
+                        " A type action may omit target to type "
+                        "into the currently focused control."
                     ),
                     "items": {
                         "type": "object",

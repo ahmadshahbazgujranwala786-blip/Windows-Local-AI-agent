@@ -91,8 +91,12 @@ class UserMemory:
 
     def __init__(
         self,
-        path: str = r"C:\Windows Agent\memory_db\chroma_db",
+        path: str | None = None,
     ) -> None:
+        if path is None:
+            from pathlib import Path
+            project_root = Path(__file__).resolve().parents[3]
+            path = str(project_root / "memory_db" / "chroma_db")
 
         self._client = (
             chromadb.PersistentClient(

@@ -15,27 +15,7 @@ from pywinauto import Desktop
 
 
 class WindowsDo:
-    """
-    High-level Windows UI interaction tool.
 
-    One public call() executes one or more UI actions against a
-    running application.
-
-    Supported actions:
-
-        click
-        double_click
-        right_click
-        type
-        key
-        scroll
-        focus
-        read
-        read_screen
-        wait
-        screenshot
-        close_app
-    """
 
     def __init__(
         self,
@@ -43,15 +23,6 @@ class WindowsDo:
         inspector=None,
         window_resolver=None,
     ) -> None:
-        """
-        Initialize the Windows UI interaction tool.
-
-        inspector:
-            Optional WindowsInspect-compatible object.
-
-        window_resolver:
-            Optional WindowsLaunch-compatible object.
-        """
 
         if not isinstance(
             backend,
@@ -85,21 +56,11 @@ class WindowsDo:
         pyautogui.PAUSE = 0.05
         pyautogui.FAILSAFE = True
 
-    # ========================================================
-    # PUBLIC TOOL
-    # ========================================================
-
     def call(
         self,
         app: str,
         actions: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
-        """
-        Execute a sequential batch of UI actions on a running app.
-
-        When an action or target fails, an inspection snapshot is
-        attached when an inspector is available.
-        """
 
         if not isinstance(
             app,
@@ -448,15 +409,6 @@ class WindowsDo:
 
         if action_type == "type":
 
-            if element is None:
-
-                return self._make_result(
-                    action,
-                    None,
-                    "error",
-                    "type requires a target.",
-                )
-
             text = action.get(
                 "text",
                 "",
@@ -479,6 +431,19 @@ class WindowsDo:
                     target_name,
                     "error",
                     "text must be a string.",
+                )
+
+            if element is None:
+                pyautogui.write(
+                    text,
+                    interval=0.01,
+                )
+
+                return self._make_result(
+                    action,
+                    None,
+                    "ok",
+                    f"typed {len(text)} chars into the focused control",
                 )
 
             # ------------------------------------------------

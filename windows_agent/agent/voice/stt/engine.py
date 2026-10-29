@@ -6,9 +6,8 @@ from pathlib import Path
 
 from vosk import KaldiRecognizer, Model, SetLogLevel
 
-MODEL_DIRECTORY = Path(
-    r"C:\Windows Agent\models\stt"
-)
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
+MODEL_DIRECTORY = PROJECT_ROOT / "models" / "stt"
 
 MODEL_PATHS = {
     "en": MODEL_DIRECTORY / "vosk-model-small-en-us-0.15",

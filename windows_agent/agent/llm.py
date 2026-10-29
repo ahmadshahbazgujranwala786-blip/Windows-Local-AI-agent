@@ -7,6 +7,7 @@ from __future__ import annotations
 import base64
 import json
 import re
+from pathlib import Path
 from typing import Any
 
 import cv2
@@ -18,9 +19,9 @@ from windows_agent.agent.prompt import get_system_prompt
 from windows_agent.tools.tool_manager import ToolManager
 
 
-MODEL_PATH = (
-    r"C:\Windows Agent\models\llm"
-    r"\Qwen3VL-2B-Instruct-Q4_K_M.gguf"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+MODEL_PATH = str(
+    PROJECT_ROOT / "models" / "llm" / "Qwen3VL-2B-Instruct-Q4_K_M.gguf"
 )
 
 
@@ -436,6 +437,11 @@ class LocalLLM:
                 "If the request DOES require Windows, filesystem, "
                 "screen, system, or memory interaction, select "
                 "exactly ONE appropriate tool action.\n\n"
+                "Choose actions based on the requested end result, "
+                "not on a hard-coded application workflow. For a "
+                "multi-step goal, use the most general available "
+                "tool and continue until the complete result is "
+                "verified.\n\n"
                 "Do NOT invent a tool action for ordinary "
                 "conversation.\n"
                 "Return exactly ONE JSON object."
@@ -480,7 +486,16 @@ class LocalLLM:
                 "Verify the requested final state when necessary.\n\n"
                 'If the original request is fully complete, return '
                 'exactly {"status":"done"}.\n\n'
+                "If the latest tool result directly confirms that "
+                "the requested end result was performed, return done "
+                "instead of inspecting or repeating actions.\n\n"
                 "Otherwise choose exactly ONE next action.\n"
+                "Choose the next action from the remaining goal and "
+                "the actual result, not from assumptions about a "
+                "specific application. Use sequential windows_do "
+                "actions when the current focused control is enough; "
+                "a type action may omit target to type into that "
+                "focused control.\n"
                 "Do not repeat a successful action unless it is "
                 "necessary for the remaining task.\n"
             )

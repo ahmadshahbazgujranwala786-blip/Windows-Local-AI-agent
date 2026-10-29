@@ -7,10 +7,15 @@ from __future__ import annotations
 import logging
 import os
 import re
+import sys
 import threading
 import time
 import warnings
 from pathlib import Path
+
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(encoding="utf-8", errors="replace")
 
 # ============================================================
 # TensorFlow / OCR logging configuration
@@ -219,9 +224,8 @@ TTS_LANGUAGE = "en"
 
 TTS_VOICE = "M1"
 
-TTS_OUTPUT_PATH = Path(
-    r"C:\Windows Agent\response.wav"
-)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+TTS_OUTPUT_PATH = PROJECT_ROOT / "runtime" / "response.wav"
 
 
 # ============================================================
@@ -348,7 +352,7 @@ llm.set_tool_manager(
 
 agent_loop = AgentLoop(
     llm=llm,
-    max_steps=5,
+    max_steps=8,
 )
 
 
@@ -549,20 +553,10 @@ def speak_response_in_background(
         daemon=True,
     ).start()
 
-
-# ============================================================
-# 15. TEXT REQUEST MODEL
-# ============================================================
-
 class TextRequest(
     BaseModel
 ):
-    """
-    Request model for direct text-based agent execution.
 
-    This endpoint is useful for the future Electron frontend and
-    for testing the complete agent pipeline without microphone input.
-    """
 
     text: str
 

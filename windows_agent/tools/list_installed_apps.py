@@ -13,7 +13,7 @@ class ListInstalledApps:
     """
     Return the pre-built Windows application index.
 
-    This follows Airi's tool architecture:
+    This follows Jerrid AI's tool architecture:
 
         list_installed_apps
             ↓
